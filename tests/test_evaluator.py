@@ -73,6 +73,9 @@ class TestEvaluator(unittest.TestCase):
         with self.assertRaises(EvaluationError):
             self.eval_expr("x + y", {'x': 5})
 
+    def test_hyperbolic_functions(self):
+        self.assertAlmostEqual(self.eval_expr("sinh(0)"), 0.0)
+        self.assertAlmostEqual(self.eval_expr("cosh(0)"), 1.0)
 
 if __name__ == '__main__':
     unittest.main()
