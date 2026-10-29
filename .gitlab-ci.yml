@@ -1,0 +1,17 @@
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  image: python:3.11-slim
+  script:
+    - chmod +x ./build.sh
+    - ./build.sh
+
+test:
+  stage: test
+  image: python:3.11-slim
+  script:
+    - chmod +x ./test.sh
+    - ./test.sh
