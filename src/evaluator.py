@@ -38,6 +38,7 @@ class Evaluator:
             'floor': math.floor,
             'ceil': math.ceil,
             'sinh': math.sinh,
+            'cosh': math.cosh,
         }
 
         # Функции 2 аргументов
