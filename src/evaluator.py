@@ -37,6 +37,7 @@ class Evaluator:
             'exp': self._exp,
             'floor': math.floor,
             'ceil': math.ceil,
+            'sinh': math.sinh,
         }
 
         # Функции 2 аргументов
