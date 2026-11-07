@@ -5,13 +5,19 @@ stages:
 build:
   stage: build
   image: python:3.11-slim
-  script:
+  tags:
+    - docker
+  before_script:
     - chmod +x ./build.sh
+  script:
     - ./build.sh
 
 test:
   stage: test
   image: python:3.11-slim
-  script:
+  tags:
+    - docker
+  before_script:
     - chmod +x ./test.sh
+  script:
     - ./test.sh

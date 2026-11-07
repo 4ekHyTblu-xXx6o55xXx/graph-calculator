@@ -42,3 +42,7 @@ desktop.ini
 
 # Logs
 *.log
+
+# Temporary working files
+DOCS/bynch.html
+DOCS/bynch_plain.txt
