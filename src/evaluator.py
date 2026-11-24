@@ -132,6 +132,8 @@ class Evaluator:
 
     @staticmethod
     def _call_function(function: Callable, *args: float, name: str) -> float:
+        for arg in args:
+            Evaluator._ensure_finite(arg, f"Аргумент функции '{name}'")
         try:
             result = function(*args)
         except EvaluationError:
