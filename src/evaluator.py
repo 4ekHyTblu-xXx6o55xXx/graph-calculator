@@ -1,14 +1,14 @@
 import math
 from typing import Dict, Callable, Optional
-from src.parser import Expression, RpnItem
+from src.parser import Expression
 
 
 class EvaluationError(Exception):
-    pass
+    """Base exception for expression evaluation errors."""
 
 
 class MathDomainError(EvaluationError):
-    pass
+    """Raised when an operation receives an argument outside its domain."""
 
 
 class Evaluator:
@@ -18,7 +18,6 @@ class Evaluator:
     }
 
     def __init__(self):
-        # Функции 1 аргумента
         self.functions_1arg: Dict[str, Callable[[float], float]] = {
             'sin': math.sin,
             'cos': math.cos,
@@ -41,7 +40,6 @@ class Evaluator:
             'cosh': math.cosh,
         }
 
-        # Функции 2 аргументов
         self.functions_2arg: Dict[str, Callable[[float, float], float]] = {
             'min': min,
             'max': max,
@@ -49,6 +47,12 @@ class Evaluator:
             'hypot': math.hypot,
             'atan2': math.atan2,
         }
+
+    @staticmethod
+    def _ensure_finite(value: float, description: str = "Результат вычисления") -> float:
+        if not math.isfinite(value):
+            raise EvaluationError(f"{description} не является конечным числом")
+        return value
 
     @staticmethod
     def _tan(x: float) -> float:
@@ -110,8 +114,8 @@ class Evaluator:
     def _exp(x: float) -> float:
         try:
             return math.exp(x)
-        except OverflowError:
-            raise EvaluationError(f"Численное переполнение в exp({x})")
+        except OverflowError as err:
+            raise EvaluationError(f"Численное переполнение в exp({x})") from err
 
     @classmethod
     def _pow(cls, base: float, exp: float) -> float:
@@ -121,8 +125,24 @@ class Evaluator:
             raise MathDomainError(f"Возведение отрицательного числа {base} в нецелую степень {exp}")
         try:
             return math.pow(base, exp)
-        except OverflowError:
-            raise EvaluationError(f"Численное переполнение при возведении {base}^{exp}")
+        except OverflowError as err:
+            raise EvaluationError(f"Численное переполнение при возведении {base}^{exp}") from err
+        except ValueError as err:
+            raise MathDomainError(f"Недопустимые аргументы степени {base}^{exp}") from err
+
+    @staticmethod
+    def _call_function(function: Callable, *args: float, name: str) -> float:
+        try:
+            result = function(*args)
+        except EvaluationError:
+            raise
+        except ValueError as err:
+            raise MathDomainError(f"Недопустимый аргумент функции '{name}': {err}") from err
+        except ZeroDivisionError as err:
+            raise MathDomainError(f"Недопустимые аргументы функции '{name}': деление на ноль") from err
+        except OverflowError as err:
+            raise EvaluationError(f"Численное переполнение в функции '{name}'") from err
+        return Evaluator._ensure_finite(result, f"Результат функции '{name}'")
 
     def evaluate(self, expr: Expression, context: Optional[Dict[str, float]] = None) -> float:
         ctx = context or {}
@@ -155,11 +175,12 @@ class Evaluator:
                         raise EvaluationError("Недостаточно операндов")
                     arg = stack.pop()
                     if op_name == 'neg':
-                        stack.append(-arg)
+                        result = -arg
                     elif op_name == 'pos':
-                        stack.append(+arg)
+                        result = +arg
                     else:
                         raise EvaluationError(f"Неизвестный оператор '{op_name}'")
+                    stack.append(self._ensure_finite(result))
 
                 elif item.arity == 2:
                     if len(stack) < 2:
@@ -168,27 +189,25 @@ class Evaluator:
                     a = stack.pop()
 
                     if op_name == '+':
-                        res = a + b
+                        result = a + b
                     elif op_name == '-':
-                        res = a - b
+                        result = a - b
                     elif op_name == '*':
-                        res = a * b
+                        result = a * b
                     elif op_name == '/':
                         if b == 0:
                             raise MathDomainError("Деление на ноль")
-                        res = a / b
+                        result = a / b
                     elif op_name == '%':
                         if b == 0:
                             raise MathDomainError("Деление на ноль")
-                        res = a % b
+                        result = a % b
                     elif op_name == '^':
-                        res = self._pow(a, b)
+                        result = self._pow(a, b)
                     else:
                         raise EvaluationError(f"Неизвестный оператор '{op_name}'")
 
-                    if math.isnan(res) or math.isinf(res):
-                        raise EvaluationError("Результат не является числом")
-                    stack.append(res)
+                    stack.append(self._ensure_finite(result))
 
             elif item.kind == 'func':
                 func_name = str(item.value).lower()
@@ -198,22 +217,20 @@ class Evaluator:
                     if not stack:
                         raise EvaluationError(f"Нет аргумента для функции '{func_name}'")
                     arg = stack.pop()
-                    if func_name in self.functions_1arg:
-                        res = self.functions_1arg[func_name](arg)
-                    else:
+                    function = self.functions_1arg.get(func_name)
+                    if function is None:
                         raise EvaluationError(f"Неизвестная функция '{func_name}'")
-                    stack.append(res)
+                    stack.append(self._call_function(function, arg, name=func_name))
 
                 elif arity == 2:
                     if len(stack) < 2:
                         raise EvaluationError(f"Недостаточно аргументов для '{func_name}'")
                     arg2 = stack.pop()
                     arg1 = stack.pop()
-                    if func_name in self.functions_2arg:
-                        res = self.functions_2arg[func_name](arg1, arg2)
-                    else:
+                    function = self.functions_2arg.get(func_name)
+                    if function is None:
                         raise EvaluationError(f"Неизвестная функция '{func_name}'")
-                    stack.append(res)
+                    stack.append(self._call_function(function, arg1, arg2, name=func_name))
 
                 else:
                     raise EvaluationError(f"Неподдерживаемая арность ({arity}) для '{func_name}'")
@@ -221,8 +238,4 @@ class Evaluator:
         if len(stack) != 1:
             raise EvaluationError("Некорректное выражение")
 
-        result = stack[0]
-        if math.isnan(result) or math.isinf(result):
-            raise EvaluationError("Результат вычисления не является числом")
-
-        return result
+        return self._ensure_finite(stack[0])
