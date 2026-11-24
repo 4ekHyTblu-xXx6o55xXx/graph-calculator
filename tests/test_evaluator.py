@@ -77,5 +77,20 @@ class TestEvaluator(unittest.TestCase):
         self.assertAlmostEqual(self.eval_expr("sinh(0)"), 0.0)
         self.assertAlmostEqual(self.eval_expr("cosh(0)"), 1.0)
 
+    def test_hyperbolic_overflow_is_reported(self):
+        with self.assertRaises(EvaluationError):
+            self.eval_expr("sinh(1000)")
+        with self.assertRaises(EvaluationError):
+            self.eval_expr("cosh(1000)")
+
+    def test_trigonometric_function_rejects_infinite_argument(self):
+        with self.assertRaises(EvaluationError):
+            self.eval_expr("sin(x)", {'x': math.inf})
+
+    def test_non_finite_context_result_is_rejected(self):
+        with self.assertRaises(EvaluationError):
+            self.eval_expr("x", {'x': math.nan})
+
+
 if __name__ == '__main__':
     unittest.main()

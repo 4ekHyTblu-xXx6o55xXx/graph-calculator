@@ -1,3 +1,4 @@
+import math
 import unittest
 from src.parser import Parser
 from src.tabulator import Tabulator
@@ -16,8 +17,8 @@ class TestTabulator(unittest.TestCase):
         self.assertEqual(points[0].y, 0.0)
         self.assertEqual(points[-1].x, 10.0)
         self.assertEqual(points[-1].y, 20.0)
-        for p in points:
-            self.assertTrue(p.is_valid)
+        for point in points:
+            self.assertTrue(point.is_valid)
 
     def test_tabulate_1d_discontinuity(self):
         expr = Parser("1 / x").parse()
@@ -49,6 +50,25 @@ class TestTabulator(unittest.TestCase):
         self.assertEqual(grid.error_count, 0)
         self.assertAlmostEqual(grid.z_min, 0.0)
         self.assertAlmostEqual(grid.z_max, 5.0)
+
+    def test_tabulate_1d_rejects_non_finite_bounds(self):
+        expr = Parser("x").parse()
+        for lower, upper in ((math.nan, 1.0), (0.0, math.inf), (-math.inf, 1.0)):
+            with self.subTest(lower=lower, upper=upper):
+                with self.assertRaises(ValueError):
+                    self.tabulator.tabulate_1d(expr, lower, upper)
+
+    def test_tabulate_2d_rejects_non_finite_bounds(self):
+        expr = Parser("x + y").parse()
+        with self.assertRaises(ValueError):
+            self.tabulator.tabulate_2d(expr, 0.0, 1.0, math.nan, 2.0)
+
+    def test_tabulator_requires_integer_step_counts(self):
+        expr = Parser("x").parse()
+        with self.assertRaises(ValueError):
+            self.tabulator.tabulate_1d(expr, 0.0, 1.0, steps=2.5)
+        with self.assertRaises(ValueError):
+            self.tabulator.tabulate_2d(expr, 0.0, 1.0, 0.0, 1.0, x_steps=True)
 
 
 if __name__ == '__main__':
