@@ -1,6 +1,7 @@
+import math
 from typing import List, Optional
 from src.parser import Expression
-from src.evaluator import Evaluator, EvaluationError, MathDomainError
+from src.evaluator import Evaluator, EvaluationError
 
 
 class Point2D:
@@ -53,6 +54,18 @@ class Tabulator:
     def __init__(self, evaluator: Optional[Evaluator] = None):
         self.evaluator = evaluator or Evaluator()
 
+    @staticmethod
+    def _validate_range(name: str, lower: float, upper: float) -> None:
+        if not math.isfinite(lower) or not math.isfinite(upper):
+            raise ValueError(f"Границы диапазона {name} должны быть конечными числами")
+        if lower >= upper:
+            raise ValueError(f"{name}_min ({lower}) должен быть меньше {name}_max ({upper})")
+
+    @staticmethod
+    def _validate_steps(steps: int, name: str = "Число шагов") -> None:
+        if isinstance(steps, bool) or not isinstance(steps, int) or steps < 2:
+            raise ValueError(f"{name} должно быть целым числом >= 2 (передано {steps})")
+
     # Табуляция функции 1 переменной f(x)
     def tabulate_1d(
         self,
@@ -62,10 +75,8 @@ class Tabulator:
         steps: int = 100,
         var_name: str = 'x'
     ) -> List[Point2D]:
-        if x_min >= x_max:
-            raise ValueError(f"x_min ({x_min}) должен быть меньше x_max ({x_max})")
-        if steps < 2:
-            raise ValueError(f"Число шагов должно быть >= 2 (передано {steps})")
+        self._validate_range('x', x_min, x_max)
+        self._validate_steps(steps)
 
         points: List[Point2D] = []
         dx = (x_max - x_min) / (steps - 1)
@@ -78,7 +89,7 @@ class Tabulator:
             try:
                 y = self.evaluator.evaluate(expr, {var_name: x})
                 points.append(Point2D(x=x, y=y, is_valid=True))
-            except (EvaluationError, MathDomainError) as err:
+            except EvaluationError as err:
                 points.append(Point2D(x=x, y=None, is_valid=False, error=str(err)))
 
         return points
@@ -96,12 +107,10 @@ class Tabulator:
         var_x: str = 'x',
         var_y: str = 'y'
     ) -> Grid2D:
-        if x_min >= x_max:
-            raise ValueError(f"x_min ({x_min}) должен быть меньше x_max ({x_max})")
-        if y_min >= y_max:
-            raise ValueError(f"y_min ({y_min}) должен быть меньше y_max ({y_max})")
-        if x_steps < 2 or y_steps < 2:
-            raise ValueError("Число шагов должно быть >= 2")
+        self._validate_range('x', x_min, x_max)
+        self._validate_range('y', y_min, y_max)
+        self._validate_steps(x_steps, "Число шагов по x")
+        self._validate_steps(y_steps, "Число шагов по y")
 
         dx = (x_max - x_min) / (x_steps - 1)
         dy = (y_max - y_min) / (y_steps - 1)
@@ -119,7 +128,7 @@ class Tabulator:
                 try:
                     z = self.evaluator.evaluate(expr, {var_x: x, var_y: y})
                     row.append(z)
-                except (EvaluationError, MathDomainError):
+                except EvaluationError:
                     row.append(None)
             matrix.append(row)
 
