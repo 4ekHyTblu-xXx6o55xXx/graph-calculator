@@ -84,7 +84,7 @@ class TestEvaluator(unittest.TestCase):
             self.eval_expr("cosh(1000)")
 
     def test_trigonometric_function_rejects_infinite_argument(self):
-        with self.assertRaises(MathDomainError):
+        with self.assertRaises(EvaluationError):
             self.eval_expr("sin(x)", {'x': math.inf})
 
     def test_non_finite_context_result_is_rejected(self):
