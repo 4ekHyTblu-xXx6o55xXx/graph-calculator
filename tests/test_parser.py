@@ -1,4 +1,5 @@
 import unittest
+from src.evaluator import Evaluator
 from src.parser import Parser, ParseError
 
 
