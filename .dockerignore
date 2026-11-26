@@ -1,0 +1,17 @@
+# служебные файлы и папки ide
+.git
+.gitignore
+.gitlab-ci.yml
+.dockerignore
+.idea/
+.vscode/
+
+# кэш python и тестов
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+.coverage
+
+# локальные скрипты и документация
+DOCS/
+*.bat

@@ -1,3 +1,5 @@
 #!/bin/sh
 set -e
-python3 -m compileall src tests
+# проверяем синтаксис модулей и запуск cli
+python3 -m compileall -q src tests
+python3 -m src.cli --help > /dev/null
