@@ -45,10 +45,13 @@ class TestCliAndPlotter(unittest.TestCase):
         self.assertEqual(code, 0)
 
     def test_run_2d_invalid_steps_returns_nonzero(self):
-        err_buf = io.StringIO()
-        with contextlib.redirect_stderr(err_buf):
-            code = run_2d("x + y", xmin=-1.0, xmax=1.0, ymin=-1.0, ymax=1.0, steps=-4, show_plot=False)
-        self.assertEqual(code, 1)
+        for steps in (-4, -1, 0, 1):
+            with self.subTest(steps=steps):
+                err_buf = io.StringIO()
+                with contextlib.redirect_stderr(err_buf):
+                    code = run_2d("x + y", -1.0, 1.0, -1.0, 1.0, steps, show_plot=False)
+                self.assertEqual(code, 1)
+                self.assertIn("число шагов должно быть >= 2", err_buf.getvalue())
 
     def test_main_table_only_skips_plot(self):
         out_buf = io.StringIO()
