@@ -82,7 +82,7 @@ class Tokenizer:
             start_pos = self.pos
 
             # Числовые литералы
-            if char.isdigit() or char == '.':
+            if char.isdecimal() or char == '.':
                 num_str = self._read_number()
                 tokens.append(Token(TokenType.NUMBER, num_str, start_pos))
                 continue
@@ -111,12 +111,12 @@ class Tokenizer:
         if self.text[self.pos] == '.':
             has_dot = True
             self.pos += 1
-            if self.pos >= self.length or not self.text[self.pos].isdigit():
+            if self.pos >= self.length or not self.text[self.pos].isdecimal():
                 raise LexerError("Одиночная точка не является числом", start)
 
         while self.pos < self.length:
             ch = self.text[self.pos]
-            if ch.isdigit():
+            if ch.isdecimal():
                 self.pos += 1
             elif ch == '.':
                 if has_dot:
@@ -132,9 +132,9 @@ class Tokenizer:
             self.pos += 1
             if self.pos < self.length and self.text[self.pos] in ('+', '-'):
                 self.pos += 1
-            if self.pos >= self.length or not self.text[self.pos].isdigit():
+            if self.pos >= self.length or not self.text[self.pos].isdecimal():
                 raise LexerError("Некорректная экспоненциальная запись числа", exp_pos)
-            while self.pos < self.length and self.text[self.pos].isdigit():
+            while self.pos < self.length and self.text[self.pos].isdecimal():
                 self.pos += 1
 
         return self.text[start:self.pos]

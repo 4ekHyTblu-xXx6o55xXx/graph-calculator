@@ -56,6 +56,17 @@ class TestTokenizer(unittest.TestCase):
         with self.assertRaises(LexerError):
             tokenizer.tokenize()
 
+    def test_superscript_is_not_a_number(self):
+        for formula in ("²", "1e²"):
+            with self.subTest(formula=formula):
+                with self.assertRaises(LexerError):
+                    Tokenizer(formula).tokenize()
+
+    def test_decimal_and_exponent_numbers(self):
+        tokens = Tokenizer(".5 1e-3").tokenize()
+        numbers = [token.value for token in tokens if token.type == TokenType.NUMBER]
+        self.assertEqual(numbers, [".5", "1e-3"])
+
 
 if __name__ == '__main__':
     unittest.main()

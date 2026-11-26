@@ -81,6 +81,9 @@ class Parser:
             if token.type == TokenType.EOF:
                 break
 
+            if not may_be_unary and token.type in (TokenType.NUMBER, TokenType.IDENTIFIER, TokenType.LPAREN):
+                raise ParseError("Пропущен оператор", token.position)
+
             if token.type == TokenType.NUMBER:
                 val = float(token.value)
                 rpn.append(RpnItem('num', val))
@@ -118,7 +121,7 @@ class Parser:
                 if may_be_unary:
                     op_symbol = 'neg' if op_symbol == '-' else 'pos'
 
-                while op_stack:
+                while op_stack and not may_be_unary:
                     top = op_stack[-1]
                     if top['type'] == 'op':
                         top_prec = self.PRECEDENCE.get(top['name'], 0)
@@ -170,11 +173,6 @@ class Parser:
                     'is_func': is_function_call
                 })
 
-                next_tok = self._peek_next()
-                if next_tok and next_tok.type == TokenType.RPAREN:
-                    if is_function_call:
-                        arg_counts[-1] = 0
-
                 may_be_unary = True
                 self.index += 1
                 continue
@@ -195,6 +193,9 @@ class Parser:
                 if not found_lparen or not op_stack[-1].get('is_func', False):
                     raise ParseError("Запятая вне контекста функции", token.position)
 
+                if may_be_unary:
+                    raise ParseError("Пропущен аргумент перед запятой", token.position)
+
                 arg_counts[-1] += 1
                 may_be_unary = True
                 self.index += 1
@@ -205,6 +206,8 @@ class Parser:
                 while op_stack:
                     top = op_stack[-1]
                     if top['type'] == 'paren' and top['name'] == '(':
+                        if may_be_unary:
+                            raise ParseError("Ожидалось выражение перед ')'", token.position)
                         paren_info = op_stack.pop()
                         found_lparen = True
                         if paren_info.get('is_func', False):

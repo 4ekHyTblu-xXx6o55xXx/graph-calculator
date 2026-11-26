@@ -1,4 +1,5 @@
 import unittest
+from src.evaluator import Evaluator
 from src.parser import Parser, ParseError
 
 
@@ -53,7 +54,27 @@ class TestParser(unittest.TestCase):
         self.assertEqual(len(funcs), 1)
         self.assertEqual(funcs[0].value, 'min')
         self.assertEqual(funcs[0].arity, 2)
+    
+    def test_power_with_unary_sign(self):
+        cases = (("2^-3", 0.125), ("2^+3", 8), ("-2^2", -4), ("2^3^2", 512))
+        for formula, expected in cases:
+            with self.subTest(formula=formula):
+                expression = Parser(formula).parse()
+                self.assertAlmostEqual(Evaluator().evaluate(expression), expected)
+    
+    def test_rejects_incomplete_expressions(self):
+        formulas = (
+            "1(2+)", "sin()", "max(1,)", "max(,2)",
+            "max(1+,2)", "()", "2 3", "2 x",
+        )
+        for formula in formulas:
+            with self.subTest(formula=formula):
+                with self.assertRaises(ParseError):
+                    Parser(formula).parse()
 
+    def test_nested_functions(self):
+        expression = Parser("max(2,min(3,4))").parse()
+        self.assertEqual(Evaluator().evaluate(expression), 3)
 
 if __name__ == '__main__':
     unittest.main()
