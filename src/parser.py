@@ -118,7 +118,7 @@ class Parser:
                 if may_be_unary:
                     op_symbol = 'neg' if op_symbol == '-' else 'pos'
 
-                while op_stack:
+                while op_stack and not may_be_unary:
                     top = op_stack[-1]
                     if top['type'] == 'op':
                         top_prec = self.PRECEDENCE.get(top['name'], 0)

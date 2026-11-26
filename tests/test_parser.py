@@ -53,7 +53,13 @@ class TestParser(unittest.TestCase):
         self.assertEqual(len(funcs), 1)
         self.assertEqual(funcs[0].value, 'min')
         self.assertEqual(funcs[0].arity, 2)
-
+    
+    def test_power_with_unary_sign(self):
+        cases = (("2^-3", 0.125), ("2^+3", 8), ("-2^2", -4), ("2^3^2", 512))
+        for formula, expected in cases:
+            with self.subTest(formula=formula):
+                expression = Parser(formula).parse()
+                self.assertAlmostEqual(Evaluator().evaluate(expression), expected)
 
 if __name__ == '__main__':
     unittest.main()
