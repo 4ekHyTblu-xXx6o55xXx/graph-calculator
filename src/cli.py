@@ -64,6 +64,10 @@ def run_1d(expr_str: str, xmin: float, xmax: float, steps: int, show_plot: bool,
 
 
 def run_2d(expr_str: str, xmin: float, xmax: float, ymin: float, ymax: float, steps: int, show_plot: bool) -> int:
+    if steps < 2:
+        print("Ошибка табуляции: число шагов должно быть >= 2", file=sys.stderr)
+        return 1
+
     try:
         parser = Parser(expr_str)
         expression = parser.parse()
@@ -136,10 +140,11 @@ def main() -> int:
         interactive_mode()
         return 0
 
+    # если не запрошена только таблица, показываем график
+    show_plot = args.plot or not args.table
     if args.is_2d:
-        return run_2d(args.expr, args.xmin, args.xmax, args.ymin, args.ymax, args.steps, show_plot=args.plot or True)
-    else:
-        return run_1d(args.expr, args.xmin, args.xmax, args.steps, show_plot=args.plot or True, show_table=args.table)
+        return run_2d(args.expr, args.xmin, args.xmax, args.ymin, args.ymax, args.steps, show_plot=True)
+    return run_1d(args.expr, args.xmin, args.xmax, args.steps, show_plot=show_plot, show_table=args.table)
 
 
 if __name__ == "__main__":
